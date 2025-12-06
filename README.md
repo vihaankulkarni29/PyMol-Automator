@@ -13,7 +13,7 @@ A Python tool to automate the generation of 3D protein structure visualizations 
 ## Prerequisites
 
 -   **Python 3.x**
--   **PyMOL**: Must be installed and accessible in your system PATH.
+-   **PyMOL**: Must be installed. The script attempts to auto-detect it in standard locations (e.g., `C:\Program Files\PyMOL`, `AppData`). If not found, you can specify the path manually.
 
 ## Installation
 
@@ -36,6 +36,13 @@ Place your input file (e.g., `AMR_Full_Analysis.xlsx`) in the `Input/` directory
 python pymol_auto_visualizer.py Input/AMR_Full_Analysis.xlsx
 ```
 This will generate PNG images in the `PyMOL_Visuals/` directory.
+
+### Specifying PyMOL Path
+If the script cannot find PyMOL automatically, use the `--pymol-path` argument:
+
+```bash
+python pymol_auto_visualizer.py --pymol-path "C:\Path\To\PyMOLWin.exe"
+```
 
 ### Interactive Mode (Manual Inspection)
 To generate scripts that you can open in PyMOL without them immediately closing:

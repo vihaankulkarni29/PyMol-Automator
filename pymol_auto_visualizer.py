@@ -7,6 +7,7 @@ import shutil
 import sys
 import argparse
 import urllib.request
+import time
 
 # 1. Data Structure (The PDB Dictionary)
 GENE_PDB_MAP = {
@@ -180,10 +181,39 @@ png {png_filename}, width=1200, height=1200, ray=1
         f.write(pml_content)
     return pml_filename
 
+def find_pymol_executable(custom_path=None):
+    """
+    Attempts to find the PyMOL executable.
+    """
+    if custom_path:
+        if os.path.exists(custom_path):
+            return custom_path
+        print(f"Error: Custom PyMOL path '{custom_path}' not found.")
+        return None
+
+    # Check PATH
+    exe = shutil.which("pymol")
+    if exe: return exe
+    
+    # Check common Windows paths
+    common_paths = [
+        r"C:\Program Files\PyMOL\PyMOLWin.exe",
+        r"C:\Program Files (x86)\PyMOL\PyMOLWin.exe",
+        os.path.expanduser(r"~\AppData\Local\Schrodinger\PyMOL2\PyMOLWin.exe"),
+        os.path.expanduser(r"~\AppData\Local\Schrodinger\PyMOL2\pymol.exe")
+    ]
+    
+    for path in common_paths:
+        if os.path.exists(path):
+            return path
+            
+    return None
+
 def main():
     parser = argparse.ArgumentParser(description="Automate PyMOL visualizations from mutation CSV.")
     parser.add_argument("input_file", nargs='?', help="Path to input CSV/Excel file.")
     parser.add_argument("-i", "--interactive", action="store_true", help="Keep PyMOL open after loading (do not quit).")
+    parser.add_argument("--pymol-path", help="Path to PyMOL executable.")
     args = parser.parse_args()
 
     # Define input path
@@ -210,10 +240,13 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     # Check for PyMOL
-    pymol_exe = shutil.which("pymol")
+    pymol_exe = find_pymol_executable(args.pymol_path)
     if not pymol_exe:
-        print("Warning: 'pymol' executable not found in PATH.")
-        print("Scripts will be generated but not executed.")
+        print("Warning: PyMOL executable not found.")
+        print("Please ensure PyMOL is in your PATH or provide it via --pymol-path.")
+        print("Scripts will be generated but not executed (no PNGs).")
+    else:
+        print(f"Using PyMOL at: {pymol_exe}")
 
     print(f"Processing {input_file}...")
     
@@ -237,22 +270,25 @@ def main():
         pml_file = create_pml_script(gene, pdb_path, residue, base_name, interactive=args.interactive)
         
         # Run PyMOL
+        # Run PyMOL
         if pymol_exe:
             print(f"> Generating visual for {gene} {variant}...")
             try:
-                # If interactive, we generally don't want to block the loop or open 50 windows.
-                # But for now, let's assume the user knows what they are doing if they use -i.
-                # Or, if interactive, maybe we just generate the scripts and don't run them?
-                # The user said "files generated are not opening".
-                # So they are likely running the scripts manually.
-                # So we just need to ensure the scripts don't have 'quit'.
-                
-                # If interactive, we skip execution to avoid spamming windows, unless user wants it.
-                # Let's execute only if NOT interactive.
                 if not args.interactive:
-                    subprocess.run(["pymol", "-c", "-q", pml_file], check=True)
+                    # PyMOLWin.exe often needs special handling or just works.
+                    # -c = command line, -q = quiet
+                    subprocess.run([pymol_exe, "-c", "-q", pml_file], check=True)
+                    
+                    # Wait a bit for file release
+                    time.sleep(1)
+                    
                     if os.path.exists(pml_file):
-                        os.remove(pml_file)
+                        try:
+                            os.remove(pml_file)
+                        except PermissionError:
+                            print(f"Warning: Could not delete {pml_file} (in use).")
+                        except Exception as e:
+                            print(f"Warning: Could not delete {pml_file}: {e}")
                 else:
                     print(f"> [Interactive] Created {pml_file} (Manual open required)")
             except subprocess.CalledProcessError as e:

@@ -1,0 +1,36 @@
+# 6
+Needleman-Wunsch global alignment
+Query: CP133923.1_emrA (390 aa)
+Reference: emrA MG1655.faa (390 aa)
+Score: 1935.0
+Identities: 388/390 (99.5%)
+Gaps: 0
+
+CP133923.1_emrA         1 MSANAETQPPQQPVKKSGKRKRLLLLLTLLFIIIAVAIGIYWFLVLRHFEETDDAYVAGN   60
+                          |||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||     
+emrA MG1655.faa         1 MSANAETQTPQQPVKKSGKRKRLLLLLTLLFIIIAVAIGIYWFLVLRHFEETDDAYVAGN   60
+
+CP133923.1_emrA        61 QIQIMSQVSGSVTKVWADNTDFVKEGDVLVTLDPTDARQAFEKAKTALASSVRQTHQLMI  120
+                          ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||     
+emrA MG1655.faa        61 QIQIMSQVSGSVTKVWADNTDFVKEGDVLVTLDPTDARQAFEKAKTALASSVRQTHQLMI  120
+
+CP133923.1_emrA       121 NSKQLQANIEVQKIALAKAQSDYNRRVPLGNANLIGREELQHARDAVTSAQAQLDVAIQQ  180
+                          ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||     
+emrA MG1655.faa       121 NSKQLQANIEVQKIALAKAQSDYNRRVPLGNANLIGREELQHARDAVTSAQAQLDVAIQQ  180
+
+CP133923.1_emrA       181 YNANQAMILGTKLEDQPAVQQAATEVRNAWLALERTRIVSPMTGYVSRRAVQPGAQISPT  240
+                          |||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||     
+emrA MG1655.faa       181 YNANQAMILGTKLEDQPAVQQAATEVRNAWLALERTRIISPMTGYVSRRAVQPGAQISPT  240
+
+CP133923.1_emrA       241 TPLMAVVPATNMWVDANFKETQIANMRIGQPVTITTDIYGDDVKYTGKVVGLDMGTGSAF  300
+                          ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||     
+emrA MG1655.faa       241 TPLMAVVPATNMWVDANFKETQIANMRIGQPVTITTDIYGDDVKYTGKVVGLDMGTGSAF  300
+
+CP133923.1_emrA       301 SLLPAQNATGNWIKVVQRLPVRIELDQKQLEQYPLRIGLSTLVSVNTTNRDGQVLANKVR  360
+                          ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||     
+emrA MG1655.faa       301 SLLPAQNATGNWIKVVQRLPVRIELDQKQLEQYPLRIGLSTLVSVNTTNRDGQVLANKVR  360
+
+CP133923.1_emrA       361 STPVAVSTAREISLAPVNKLIDDIVKANAG  390
+                          ||||||||||||||||||||||||||||||     
+emrA MG1655.faa       361 STPVAVSTAREISLAPVNKLIDDIVKANAG  390
+

@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 import os
 import subprocess
@@ -15,8 +16,8 @@ GENE_PDB_MAP = {
     'tetA': '4TQU',
     'emrE': '2I68',
     'emrK': '3B5D',
-    'emrA': '2I68', # Proxy using emrE
-    'emrB': '2I68'  # Proxy using emrE
+    'emrA': 'AF-P27303', # AlphaFold UniProt ID for E. coli EmrA
+    'emrB': 'AF-P0AEJ0'  # AlphaFold UniProt ID for E. coli EmrB
 }
 
 PDB_CACHE_DIR = "PDB_Cache"
@@ -25,16 +26,40 @@ def get_pdb_file(pdb_id):
     """
     Checks for PDB file in cache, downloads if missing.
     Returns the absolute path to the PDB file.
+    Supports standard PDB IDs (RCSB) and AlphaFold IDs (via API).
     """
     if not os.path.exists(PDB_CACHE_DIR):
         os.makedirs(PDB_CACHE_DIR)
     
-    pdb_filename = f"{pdb_id}.pdb"
+    # Determine filename and URL
+    if pdb_id.startswith("AF-"):
+        # Format: AF-UniProtID
+        uniprot_id = pdb_id.split("-")[1]
+        pdb_filename = f"{pdb_id}.pdb"
+        
+        # Fetch URL from AlphaFold API to get latest version
+        api_url = f"https://alphafold.ebi.ac.uk/api/prediction/{uniprot_id}"
+        try:
+            with urllib.request.urlopen(api_url) as response:
+                data = json.loads(response.read().decode())
+                # data is a list, take first entry
+                if data and 'pdbUrl' in data[0]:
+                    url = data[0]['pdbUrl']
+                else:
+                    print(f"Error: No PDB URL found in AlphaFold API for {uniprot_id}")
+                    return None
+        except Exception as e:
+            print(f"Error fetching AlphaFold API for {uniprot_id}: {e}")
+            return None
+            
+    else:
+        pdb_filename = f"{pdb_id}.pdb"
+        url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
+
     pdb_path = os.path.join(PDB_CACHE_DIR, pdb_filename)
     
     if not os.path.exists(pdb_path):
-        print(f"Downloading PDB structure {pdb_id}...")
-        url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
+        print(f"Downloading structure {pdb_id} from {url}...")
         try:
             urllib.request.urlretrieve(url, pdb_path)
             print(f"Downloaded {pdb_id} to {pdb_path}")
@@ -91,6 +116,40 @@ def parse_mutations(file_path):
             pdb_id = GENE_PDB_MAP.get(gene_name)
             yield (gene_name, pdb_id, residue_number, variant_raw)
 
+def validate_residue(pdb_path, residue):
+    """
+    Parses the PDB file to check if the residue number exists in any chain.
+    Returns True if found, False otherwise.
+    """
+    residue_str = str(residue)
+    try:
+        with open(pdb_path, 'r') as f:
+            for line in f:
+                if line.startswith("ATOM") or line.startswith("HETATM"):
+                    # PDB format: Residue sequence number is columns 22-26
+                    # But often it's just space separated. Let's rely on fixed width for standard PDB.
+                    # Columns 22-26 (1-based) -> 22:26 in Python slice? No, 22 is 23rd char.
+                    # Python slice: line[22:26] gives 4 chars. PDB spec says resSeq is 23-26.
+                    # Let's try splitting, which is safer for non-standard files, 
+                    # but PDB ATOM lines are strict.
+                    # Standard: ATOM   1    N   ASP A   1      ...
+                    # Split: ['ATOM', '1', 'N', 'ASP', 'A', '1', ...] -> index 5 is res num.
+                    parts = line.split()
+                    if len(parts) > 5:
+                        # Check if residue matches. 
+                        # Note: Insertion codes might complicate this, but simple check is enough.
+                        if parts[5] == residue_str:
+                            return True
+                        # Sometimes chain is merged: "ASP A1" -> need to be careful.
+                        # Fixed width is better: line[22:26].strip()
+                        res_seq = line[22:26].strip()
+                        if res_seq == residue_str:
+                            return True
+    except Exception as e:
+        print(f"Warning: Could not validate residue in {pdb_path}: {e}")
+        return True # Assume true if we can't parse
+    return False
+
 def create_pml_script(gene, pdb_path, residue, base_filename, interactive=False):
     """
     Writes a temporary .pml file with PyMOL commands.
@@ -110,7 +169,7 @@ color white
 bg_color white
 select mutation_site, resi {residue}
 show spheres, mutation_site
-color red, mutation_site
+color firebrick, mutation_site
 zoom mutation_site, 15
 png {png_filename}, width=1200, height=1200, ray=1
 """
@@ -167,6 +226,11 @@ def main():
         # Get PDB file (cached)
         pdb_path = get_pdb_file(pdb_id)
         if not pdb_path:
+            continue
+
+        # Validate Residue
+        if not validate_residue(pdb_path, residue):
+            print(f"Skipping {gene} {variant}: Residue {residue} not found in PDB {pdb_id}.")
             continue
 
         base_name = os.path.join(output_dir, f"{gene}_{variant}")

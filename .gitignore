@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+PyMOL_Visuals/
+PDB_Cache/
+.DS_Store

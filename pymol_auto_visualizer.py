@@ -524,14 +524,54 @@ rotate y, 15
 
 """
 
-    # Add labels for each mutation
-    label_y_offset = 0
-    for pos, wt, mut in mutations:
-        pml_content += f"""# Label mutation {wt}{pos}{mut}
-label wild_type and resi {pos} and name CA, "{wt}{pos}"
-label mutant and resi {pos} and name CA, "{mut}{pos}"
-set label_color, yellow, wild_type and resi {pos}
-set label_color, red, mutant and resi {pos}
+    # Add arrow-based labels for each mutation
+    # Create pseudoatoms for label positions and draw arrows
+    pml_content += """
+# Configure label settings for better visibility
+set label_size, 30
+set label_font_id, 7
+set label_bg_color, white
+set label_bg_transparency, 0.3
+
+"""
+    
+    for idx, (pos, wt, mut) in enumerate(mutations):
+        mutation_label = f"{wt}{pos}{mut}"
+        
+        # Create pseudoatoms for wild-type labels (offset to the right and up)
+        pml_content += f"""# Arrow and label for wild-type mutation site {mutation_label}
+pseudoatom wt_label_{idx}, wild_type and resi {pos} and name CA, pos=[15.0, {10.0 + idx * 5.0}, 5.0]
+label wt_label_{idx}, "{mutation_label}"
+set label_color, yellow, wt_label_{idx}
+show nb_spheres, wt_label_{idx}
+color yellow, wt_label_{idx}
+
+# Draw arrow from mutation site to label (wild-type)
+distance wt_arrow_{idx}, wild_type and resi {pos} and name CA, wt_label_{idx}
+hide labels, wt_arrow_{idx}
+color yellow, wt_arrow_{idx}
+set dash_color, yellow, wt_arrow_{idx}
+set dash_width, 3.0, wt_arrow_{idx}
+set dash_gap, 0
+
+"""
+        
+        # Create pseudoatoms for mutant labels (offset to the right and up)
+        pml_content += f"""# Arrow and label for mutant mutation site {mutation_label}
+pseudoatom mut_label_{idx}, mutant and resi {pos} and name CA, pos=[15.0, {10.0 + idx * 5.0}, 5.0]
+label mut_label_{idx}, "{mutation_label}"
+set label_color, red, mut_label_{idx}
+show nb_spheres, mut_label_{idx}
+color firebrick, mut_label_{idx}
+
+# Draw arrow from mutation site to label (mutant)
+distance mut_arrow_{idx}, mutant and resi {pos} and name CA, mut_label_{idx}
+hide labels, mut_arrow_{idx}
+color firebrick, mut_arrow_{idx}
+set dash_color, firebrick, mut_arrow_{idx}
+set dash_width, 3.0, mut_arrow_{idx}
+set dash_gap, 0
+
 """
 
     pml_content += f"""

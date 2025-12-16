@@ -734,7 +734,7 @@ def main():
                         except:
                             pass
                     
-                    print(f"  ✓ Created: {base_name}.png")
+                    print(f"  [OK] Created: {base_name}.png")
                 else:
                     print(f"  [Interactive] Created {comparison_pml} (Manual open required)")
                 
